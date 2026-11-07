@@ -979,8 +979,15 @@ raop_handler_setup(raop_conn_t *conn,
         conn->raop_rtp_mirror = raop_rtp_mirror_init(raop->logger, &raop->callbacks,
                                                      conn->raop_ntp, remote, conn->remotelen, aeskey);
 
-        /* the event port is not used in mirror mode or audio mode */
+        /* The event channel: the client connects to eventPort, and the receiver
+         * can then ask it for an IDR frame (raop_request_keyframe). */
         unsigned short event_port = 0;
+        if (!conn->raop_events) {
+            conn->raop_events = raop_events_init(raop->logger, conn->remotelen == 16, &event_port);
+            if (conn->raop_events) {
+                raop->events = conn->raop_events;
+            }
+        }
         plist_t res_event_port_node = plist_new_uint(event_port);
         plist_t res_timing_port_node = plist_new_uint(timing_lport);
         plist_dict_set_item(res_root_node, "timingPort", res_timing_port_node);

@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include "raop.h"
+#include "raop_events.h"
 #include "raop_rtp.h"
 #include "pairing.h"
 #include "httpd.h"
@@ -45,6 +46,9 @@ static void plist_mem_free(void *ptr) {
 struct raop_s {
     /* Callbacks for audio and video */
     raop_callbacks_t callbacks;
+
+    /* the event channel of the connection that set up mirroring last, if any */
+    raop_events_t *events;
 
     /* Logger instance */
     logger_t *logger;
@@ -105,6 +109,7 @@ struct raop_conn_s {
     raop_ntp_t *raop_ntp;
     raop_rtp_t *raop_rtp;
     raop_rtp_mirror_t *raop_rtp_mirror;
+    raop_events_t *raop_events;
     fairplay_t *fairplay;
     pairing_session_t *session;
   
@@ -563,6 +568,12 @@ conn_destroy(void *ptr) {
         /* This is done in case TEARDOWN was not called */
         raop_rtp_mirror_destroy(conn->raop_rtp_mirror);
     }
+    if (conn->raop_events) {
+        if (conn->raop->events == conn->raop_events) {
+            conn->raop->events = NULL;
+        }
+        raop_events_destroy(conn->raop_events);
+    }
     if (conn->raop_ntp) {
         raop_ntp_destroy(conn->raop_ntp);
     }
@@ -695,6 +706,11 @@ raop_init2(raop_t *raop, int nohold, const char *device_id, const char *keyfile)
     raop->pairing = pairing;
     raop->httpd = httpd;
     return 0;
+}
+
+int
+raop_request_keyframe(raop_t *raop) {
+    return raop_events_force_keyframe(raop->events);
 }
 
 void
