@@ -782,6 +782,21 @@ raop_handler_setup(raop_conn_t *conn,
         if (raop->callbacks.report_client_request) {
             raop->callbacks.report_client_request(raop->callbacks.cls, deviceID, model, name, &admit_client);
         }
+        if (raop->callbacks.report_client_details) {
+            const char *keys[] = {"osName", "osVersion", "osBuildVersion", "sourceVersion", "macAddress"};
+            char *values[5] = {NULL};
+            for (int i = 0; i < 5; i++) {
+                plist_t node = plist_dict_get_item(req_root_node, keys[i]);
+                if (node && plist_get_node_type(node) == PLIST_STRING) {
+                    plist_get_string_val(node, &values[i]);
+                }
+            }
+            raop->callbacks.report_client_details(raop->callbacks.cls, values[0], values[1], values[2],
+                                                  values[3], values[4]);
+            for (int i = 0; i < 5; i++) {
+                plist_mem_free(values[i]);
+            }
+        }
         if (admit_client && deviceID && name && raop->callbacks.register_client) {
             char *client_device_id = NULL;
             char *client_pk = NULL;   /* encoded as null-terminated  base64 string, must be freed*/

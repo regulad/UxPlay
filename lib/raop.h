@@ -107,6 +107,10 @@ struct raop_callbacks_s {
     void  (*audio_get_format)(void *cls, unsigned char *ct, unsigned short *spf, bool *usingScreen, bool *isMedia, uint64_t *audioFormat);
     void  (*mirror_video_running)(void *cls, bool is_running);
     void  (*report_client_request) (void *cls, char *deviceid, char *model, char *name, bool *admit);
+    /* optional: more about the client, from the same SETUP request (each may be NULL) */
+    void  (*report_client_details) (void *cls, const char *os_name, const char *os_version,
+                                    const char *os_build_version, const char *source_version,
+                                    const char *mac_address);
     void  (*display_pin) (void *cls, char * pin);
     void  (*register_client) (void *cls, const char *device_id, const char *pk_str, const char *name);
     bool  (*check_register) (void *cls, const char *pk_str);
